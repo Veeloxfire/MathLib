@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MATH_LIB_H
+#define MATH_LIB_H
 using f32 = float;
 using u8 = unsigned char;
 using u32 = unsigned int;
@@ -27,6 +28,16 @@ inline constexpr f32 RECIP_ROOT_2 =
 
 inline constexpr f32 ROOT_3 =
 1.7320508075688772935274463415058723669428052538103806280558069794f;
+
+namespace MATH {
+  template<typename T, usize len>
+  static inline constexpr bool arr_eq(const T(&t1)[len], const T(&t2)[len]) {
+    for (usize i = 0; i < len; i++) {
+      if (t1[i] != t2[i]) return false;
+    }
+    return true;
+  }
+}
 
 #pragma warning(push)
 #pragma warning(disable:4201)
@@ -107,7 +118,7 @@ struct matNxN {
   }
 
   constexpr bool operator==(const matNxN<N>& m) const {
-    return mem_eq(arr, m.arr, N * N);
+    return MATHS::arr_eq(arr, m.arr, N * N);
   }
 
   constexpr static inline usize index(usize x, usize y) {
@@ -116,7 +127,7 @@ struct matNxN {
 
   constexpr static auto identity() {
     matNxN<N> res ={};
-    
+
     for (usize i = 0; i < N; i++) {
       res.arr[index(i, i)] = 1;
     }
@@ -231,7 +242,7 @@ inline constexpr f32 vec_dot(const vec3& v1, const vec3 v2) {
 template<usize N>
 constexpr auto mat_mul(const matNxN<N>& m1, const matNxN<N>& m2) {
   using MAT = matNxN<N>;
-  
+
   MAT res;
 
   for (usize x = 0; x < MAT::N; x++) {
@@ -359,7 +370,7 @@ constexpr matNxN<N> mat_inverse(const matNxN<N>& m) {
   //Trasnposed matrix of cofactors
   f32 det = 0.0f;
   MAT res ={};
-  if(0 < MAT::N) {
+  if (0 < MAT::N) {
     for (u32 x = 0; x < MAT::N; x++) {
       const f32 co = mat_cofactor(m, x, 0);
 
@@ -1054,7 +1065,7 @@ namespace MATH {
 
   template<usize N>
   bool approx_eq(const matNxN<N>& m1, const matNxN<N>& m2,
-                       f32 max_abs_diff) {
+                 f32 max_abs_diff) {
     using MAT = matNxN<N>;
 
     for (usize x = 0; x < MAT::N; x++) {
@@ -1105,3 +1116,4 @@ f32 build_f32(const FloatParseData* float_parse);
 u32 build_u32(const u8* digits, u32 num_digits);
 
 f32 load_to_float(BIG_INT& b, i32 exp_offset, bool negative);
+#endif
