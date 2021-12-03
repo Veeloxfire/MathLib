@@ -28,6 +28,9 @@ inline constexpr f32 RECIP_ROOT_2 =
 inline constexpr f32 ROOT_3 =
 1.7320508075688772935274463415058723669428052538103806280558069794f;
 
+#pragma warning(push)
+#pragma warning(disable:4201)
+
 struct vec2 {
   union {
     f32 arr[2] ={ 0 };
@@ -70,6 +73,8 @@ struct vec4 {
     };
   };
 };
+
+#pragma warning(pop)
 
 struct quat4 {
   f32 r;
@@ -607,10 +612,6 @@ constexpr void arbitrary_sub_no_wrap(u32* num1, const u32* num2, u32 num_len) {
 }
 
 constexpr void arbitrary_shift_left_large(u32* num1, u32 num_len, u32 shift) {
-  u32 carry = 0;
-  u32 next_carry = 0;
-  u32 res = 0;
-
   //Optimization??
   //if(large_shift > 3) { /* return 0 as cannot shift that far*/ }
 
@@ -696,9 +697,9 @@ constexpr void arbitrary_multiply(u32* num1, const u32* num2,
     //Will always be valid as we already checked for 0
     u32 highest_set_bit = find_highest_bit_set(current_mul) + 1;
 
-    for (u32 i = 0; i < highest_set_bit; i++, next_shift_needed++) {
+    for (u32 j = 0; j < highest_set_bit; j++, next_shift_needed++) {
 
-      u32 current_shift = (1 << i);
+      u32 current_shift = (1 << j);
 
       if ((current_shift & current_mul) != current_shift) {
         continue;
