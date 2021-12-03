@@ -118,7 +118,7 @@ struct matNxN {
   }
 
   constexpr bool operator==(const matNxN<N>& m) const {
-    return MATHS::arr_eq(arr, m.arr, N * N);
+    return MATH::arr_eq(arr, m.arr);
   }
 
   constexpr static inline usize index(usize x, usize y) {
