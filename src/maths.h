@@ -71,7 +71,10 @@ struct vec3 {
   void add(const vec3& v);
   void piecewise_mul(const vec3& v);
   void normalise();
+  f32 length() const;
 };
+
+constexpr vec3 ORIGIN = { 0.0f, 0.0f, 0.0f };
 
 struct vec4 {
   union {
@@ -136,9 +139,14 @@ struct matNxN {
   }
 
   constexpr void transpose() {
-    for (u32 x = 0; x < N; x++) {
-      for (u32 y = x + 1; y < N; y++) {
-        swap(arr[index(x, y)], arr[index(y, x)]);
+    for (u32 x = 0; x < N; ++x) {
+      for (u32 y = x + 1; y < N; ++y) {
+        const auto a = index(x, y);
+        const auto b = index(y, x);
+        const auto old = arr[a];
+        arr[a] = arr[b];
+        arr[b] = old;
+        
       }
     }
   }
@@ -182,16 +190,20 @@ constexpr quat4 quat_mul(const quat4& q1, const quat4& q2) {
   };
 }
 
-constexpr vec4 vec_mul(const mat4x4& m, const vec4& v) {
-  return vec4{
-    (m.arr[mat4x4::index(0,  0)] * v.x) + (m.arr[mat4x4::index(1,  0)] * v.y)
-    + (m.arr[mat4x4::index(2,  0)] * v.z) + (m.arr[mat4x4::index(3,  0)] * v.w),
-    (m.arr[mat4x4::index(0,  1)] * v.x) + (m.arr[mat4x4::index(1,  1)] * v.y)
-    + (m.arr[mat4x4::index(2,  1)] * v.z) + (m.arr[mat4x4::index(3,  1)] * v.w),
-    (m.arr[mat4x4::index(0,  2)] * v.x) + (m.arr[mat4x4::index(1,  2)] * v.y)
-    + (m.arr[mat4x4::index(2,  2)] * v.z) + (m.arr[mat4x4::index(3,  2)] * v.w),
-    (m.arr[mat4x4::index(0,  3)] * v.x) + (m.arr[mat4x4::index(1,  3)] * v.y)
-    + (m.arr[mat4x4::index(2,  3)] * v.z) + (m.arr[mat4x4::index(3,  3)] * v.w),
+inline constexpr vec3 vec_shrink(const vec4& v) {
+  return {
+    v.x,
+    v.y,
+    v.z,
+  };
+}
+
+inline constexpr vec4 vec_extend(const vec3& v, f32 w) {
+  return {
+    v.x,
+    v.y,
+    v.z,
+    w,
   };
 }
 
@@ -216,6 +228,14 @@ inline constexpr vec3 vec_sub(const vec3& v1, const vec3& v2) {
     v1.x - v2.x,
     v1.y - v2.y,
     v1.z - v2.z,
+  };
+}
+
+inline constexpr vec3 vec_neg(const vec3& v1) {
+  return vec3{
+    - v1.x,
+    - v1.y,
+    - v1.z,
   };
 }
 
@@ -424,6 +444,19 @@ constexpr vec3 mat_mul(const mat3x3& m, const vec3& v) {
   return res;
 }
 
+constexpr vec3 mat_augmented_mul(const mat4x4& m, const vec3& v, f32 w) {
+  vec3 res;
+
+  for (usize y = 0; y < 3; y++) {
+    res.arr[y] += m.arr[mat4x4::index(y, 0)] * v.x;
+    res.arr[y] += m.arr[mat4x4::index(y, 1)] * v.y;
+    res.arr[y] += m.arr[mat4x4::index(y, 2)] * v.z;
+    res.arr[y] += m.arr[mat4x4::index(y, 3)] * w;
+  }
+
+  return res;
+}
+
 constexpr mat3x3 cross_product_matrix(const vec3& vec) {
   mat3x3 res;
 
@@ -477,14 +510,13 @@ constexpr mat4x4 translation_matrix(const vec3& direction) {
   };
 }
 
-//TODO: Learn how this actually works
-constexpr bool ray_triangle_intersection_culled(const vec3& orig,
-                                                const vec3& dir,
-                                                const vec3& v0,
-                                                const vec3& v1,
-                                                const vec3& v2,
-                                                f32* out_t,
-                                                f32* out_u, f32* out_v) {
+constexpr bool ray_triangle_intersection(const vec3& orig,
+                                         const vec3& dir,
+                                         const vec3& v0,
+                                         const vec3& v1,
+                                         const vec3& v2,
+                                         vec3* out_point) {
+  //Fast, Minimum Storage Ray/Triangle Intersection Algorithm
   constexpr f32 EPSILON = 0.0001f;
 
   const vec3 edge1 = vec_sub(v1, v0);
@@ -505,13 +537,14 @@ constexpr bool ray_triangle_intersection_culled(const vec3& orig,
   if (u < 0.0f || u > det
       || v < 0.0f || u + v > det) return false;
 
-  const f32 t = vec_dot(edge2, qvec);
   const f32 inv_det = 1.0f / det;
+  const f32 t = inv_det * vec_dot(edge2, qvec);
 
-  //Assign and check for null
-  if (out_t) *out_t = t * inv_det;
-  if (out_u) *out_u = u * inv_det;
-  if (out_v) *out_v = v * inv_det;
+  vec3 out = vec_scale(t, dir);
+  out.add(orig);
+
+  *out_point = out;
+
   return true;
 }
 
@@ -906,8 +939,8 @@ struct BIG_INT {
   max_v = pow(2, 128)
 
   while(a < max_v):
-  print(f"{hex(a)}")
-  a *= 10
+    print(f"{hex(a)}")
+    a *= 10
 
 
   and then formatted manually :(
@@ -1037,7 +1070,24 @@ namespace MATH {
   constexpr inline u32 abs(u32 u) { return u; }
   f32 abs(f32);
 
-  f32 maximum(f32 a, f32 b);
+  constexpr inline f32 maximum(f32 a, f32 b) {
+    return a > b ? a : b;
+  }
+
+  constexpr inline f32 maximum(f32 a, f32 b, f32 c) {
+    return maximum(maximum(a, b), c);
+  }
+
+  constexpr inline f32 minimum(f32 a, f32 b) {
+    return a < b ? a : b;
+  }
+
+  constexpr inline f32 minimum(f32 a, f32 b, f32 c) {
+    return minimum(minimum(a, b), c);
+  }
+
+  f32 floor_to_nearest_multiple(f32 num, f32 base);
+
   rad32 arcsin(f32);
   rad32 arctan(f32);
   f32 sin(rad32);
@@ -1045,9 +1095,15 @@ namespace MATH {
   f32 tan(rad32);
   f32 sqrt(f32);
   f32 log2(f32);
+
   i32 round(f32);
+  i32 ceil(f32);
+  i32 floor(f32);
+  i32 truncate(f32);
   i32 ulp(f32);
   f32 from_ulp(u32);
+
+  f32 mod(f32 num, f32 den);
 
   bool is_nan(f32);
   bool is_inf(f32);
@@ -1083,9 +1139,14 @@ namespace MATH {
 }
 
 quat4 quat_from_angles(const vec3& v);
+quat4 quat_from_angle_axis(const vec3& axis, const f32 angle);
 mat4x4 scale_rotate_translate(const f32 scale,
                               const quat4& q,
                               const vec3& translate);
+
+f32 vec_geo_dist(const vec3& a, const vec3& b);
+
+vec3 vec_rotate(const quat4& q, const vec3& vec);
 
 f32 magnitude(const quat4& q);
 mat3x3 rotate_around_axis_matrix(vec3 axis, rad32 theta);
@@ -1094,6 +1155,9 @@ mat4x4 rotation_matrix(const vec3& angles);
 mat4x4 scale_rotate_translate(const f32 scale,
                               const vec3& rotate,
                               const vec3& translate);
+mat4x4 scale_rotate_translate_transpose(const f32 scale,
+                                        const quat4& q,
+                                        const vec3& translate);
 mat4x4 view_matrix(const quat4& quaternion, const vec3& position);
 mat4x4 view_matrix(const vec3& angles, const vec3& position);
 quat4 rotate_around_axis(vec3 axis_normal, rad32 angle);

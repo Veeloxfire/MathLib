@@ -33,16 +33,32 @@ f32 MATH::sqrt(f32 f) {
   return sqrtf(f);
 }
 
-f32 MATH::maximum(f32 a, f32 b) {
-  return a > b ? a : b;
-}
-
 f32 MATH::log2(f32 f) {
   return log2f(f);
 }
 
 i32 MATH::round(f32 f) {
-  return (i32)(f + (0.5 - (f < 0)));
+  return (i32)(f + (0.5f - (f32)(f < 0.0f)));
+}
+
+i32 MATH::ceil(f32 f) {
+  return (i32)(ceilf(f));
+}
+
+i32 MATH::floor(f32 f) {
+  return (i32)(floorf(f));
+}
+
+i32 MATH::truncate(f32 f) {
+  return (i32)f;
+}
+
+f32 MATH::floor_to_nearest_multiple(f32 num, f32 base) {
+  f32 n = num / base;
+
+  n = floorf(n);
+
+  return n * base;
 }
 
 i32 MATH::ulp(const f32 f) {
@@ -58,6 +74,11 @@ f32 MATH::from_ulp(u32 u) {
 
   return val;
 }
+
+f32 MATH::mod(f32 num, f32 den) {
+  return fmodf(num, den);
+}
+
 
 static constexpr u32 F32_INF_OR_NAN_MASK = 0x7F800000;
 static constexpr u32 SIGN_BIT = 0x80000000;
@@ -174,6 +195,10 @@ void vec3::piecewise_mul(const vec3& v) {
   z *= v.z;
 }
 
+f32 vec3::length() const {
+  return MATH::sqrt((x * x) + (y * y) + (z * z));
+}
+
 mat3x3 rotate_around_axis_matrix(vec3 axis, rad32 theta) {
   const f32 cos_theta = MATH::cos(theta);
   const f32 sin_theta = MATH::sin(theta);
@@ -265,8 +290,40 @@ quat4 quat_from_angles(const vec3& angles) {
   };
 }
 
+quat4 quat_from_angle_axis(const vec3& axis, const f32 angle) {
+  f32 resip_dist = 1.0f / axis.length();
+
+  const f32 cos_a = MATH::cos(angle * 0.5f);
+  const f32 sin_a = MATH::sin(angle * 0.5f);
+  return {
+     cos_a,
+     resip_dist * axis.x * sin_a,
+     resip_dist * axis.y * sin_a,
+     resip_dist * axis.z * sin_a,
+  };
+}
+
 f32 magnitude(const quat4& q) {
   return MATH::sqrt(q.r * q.r + q.i * q.i + q.j * q.j + q.k * q.k);
+}
+
+vec3 vec_rotate(const quat4& q, const vec3& vec) {
+  const f32 q_ii = q.i * q.i;
+  const f32 q_jj = q.j * q.j;
+  const f32 q_kk = q.k * q.k;
+
+  const f32 q_ri = q.r * q.i;
+  const f32 q_rj = q.r * q.j;
+  const f32 q_rk = q.r * q.k;
+  const f32 q_ij = q.i * q.j;
+  const f32 q_ik = q.i * q.k;
+  const f32 q_jk = q.j * q.k;
+
+  return {
+    vec.x * (1.0f - 2.0f * (q_jj + q_kk)) + vec.y * (2.0f * (q_ij - q_rk)) + vec.z * (2.0f * (q_ik + q_rj)),
+    vec.x * (2.0f * (q_ij + q_rk)) + vec.y * (1.0f - 2.0f * (q_ii + q_kk)) + vec.z * (2.0f * (q_jk - q_ri)),
+    vec.x * (2.0f * (q_ik - q_rj)) + vec.y * (2.0f * (q_jk + q_ri)) + vec.z * (1.0f - 2.0f * (q_ii + q_jj)),
+  };
 }
 
 mat4x4 rotation_matrix(const quat4& q) {
@@ -299,6 +356,15 @@ mat4x4 scale_rotate_translate(const f32 scale,
   res = mat_mul(res, rotation_matrix(q));
   res = mat_mul(res, translation_matrix(translate));
 
+  return res;
+}
+
+mat4x4 scale_rotate_translate_transpose(const f32 scale,
+                              const quat4& q,
+                              const vec3& translate) {
+  //TODO: make this into a single operation?
+  mat4x4 res = scale_rotate_translate(scale, q, translate);
+  res.transpose();
   return res;
 }
 
@@ -357,7 +423,7 @@ f32 build_f32(const FloatParseData* float_parse) {
   assert(float_parse->num_digits != 0);//must have digits
   assert(float_parse->digits[0] != 0);//no leading zeros
 
-  //Calculate the decimal versions of the mandissa and exponent
+  //Calculate the decimal versions of the mantissa and exponent
   const u32 mantissa_dec = build_u32(float_parse->digits, float_parse->num_digits);
 
   const i32 exp_pow_10 = float_parse->exponent
@@ -466,4 +532,12 @@ f32 load_to_float(BIG_INT& b, i32 exp_offset, bool negative) {
   u32 sign = ((u32)negative) << 31;
 
   return MATH::from_ulp(sign | exp_v | flt);
+}
+
+f32 vec_geo_dist(const vec3& a, const vec3& b) {
+  const f32 x = a.x - b.x;
+  const f32 y = a.y - b.y;
+  const f32 z = a.z - b.z;
+
+  return MATH::sqrt((x * x) + (y * y) + (z * z));
 }
