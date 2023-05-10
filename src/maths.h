@@ -31,7 +31,7 @@ inline constexpr f32 ROOT_3 =
 
 namespace MATH {
   template<typename T, usize len>
-  static inline constexpr bool arr_eq(const T(&t1)[len], const T(&t2)[len]) {
+  static constexpr bool arr_eq(const T(&t1)[len], const T(&t2)[len]) {
     for (usize i = 0; i < len; i++) {
       if (t1[i] != t2[i]) return false;
     }
@@ -124,7 +124,7 @@ struct matNxN {
     return MATH::arr_eq(arr, m.arr);
   }
 
-  constexpr static inline usize index(usize x, usize y) {
+  constexpr static usize index(usize x, usize y) {
     return (N * x) + y;
   }
 
@@ -190,7 +190,7 @@ constexpr quat4 quat_mul(const quat4& q1, const quat4& q2) {
   };
 }
 
-inline constexpr vec3 vec_shrink(const vec4& v) {
+constexpr vec3 vec_shrink(const vec4& v) {
   return {
     v.x,
     v.y,
@@ -198,7 +198,7 @@ inline constexpr vec3 vec_shrink(const vec4& v) {
   };
 }
 
-inline constexpr vec4 vec_extend(const vec3& v, f32 w) {
+constexpr vec4 vec_extend(const vec3& v, f32 w) {
   return {
     v.x,
     v.y,
@@ -207,7 +207,7 @@ inline constexpr vec4 vec_extend(const vec3& v, f32 w) {
   };
 }
 
-inline constexpr vec3 vec_scale(f32 scale, const vec3& v) {
+constexpr vec3 vec_scale(f32 scale, const vec3& v) {
   return vec3{
     v.x * scale,
     v.y * scale,
@@ -215,7 +215,7 @@ inline constexpr vec3 vec_scale(f32 scale, const vec3& v) {
   };
 }
 
-inline constexpr vec3 vec_piecewise_mul(const vec3& v1, const vec3& v2) {
+constexpr vec3 vec_piecewise_mul(const vec3& v1, const vec3& v2) {
   return vec3{
     v1.x * v2.x,
     v1.y * v2.y,
@@ -223,7 +223,7 @@ inline constexpr vec3 vec_piecewise_mul(const vec3& v1, const vec3& v2) {
   };
 }
 
-inline constexpr vec3 vec_sub(const vec3& v1, const vec3& v2) {
+constexpr vec3 vec_sub(const vec3& v1, const vec3& v2) {
   return vec3{
     v1.x - v2.x,
     v1.y - v2.y,
@@ -231,7 +231,7 @@ inline constexpr vec3 vec_sub(const vec3& v1, const vec3& v2) {
   };
 }
 
-inline constexpr vec3 vec_neg(const vec3& v1) {
+constexpr vec3 vec_neg(const vec3& v1) {
   return vec3{
     - v1.x,
     - v1.y,
@@ -239,7 +239,7 @@ inline constexpr vec3 vec_neg(const vec3& v1) {
   };
 }
 
-inline constexpr vec3 vec_add(const vec3& v1, const vec3& v2) {
+constexpr vec3 vec_add(const vec3& v1, const vec3& v2) {
   return vec3{
     v1.x + v2.x,
     v1.y + v2.y,
@@ -247,7 +247,7 @@ inline constexpr vec3 vec_add(const vec3& v1, const vec3& v2) {
   };
 }
 
-inline constexpr vec3 vec_cross(const vec3& v1, const vec3 v2) {
+constexpr vec3 vec_cross(const vec3& v1, const vec3 v2) {
   return  {
     v1.y * v2.z - v1.z * v2.y,
     v1.z * v2.x - v1.x * v2.z,
@@ -255,7 +255,7 @@ inline constexpr vec3 vec_cross(const vec3& v1, const vec3 v2) {
   };
 }
 
-inline constexpr f32 vec_dot(const vec3& v1, const vec3 v2) {
+constexpr f32 vec_dot(const vec3& v1, const vec3 v2) {
   return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
@@ -1061,28 +1061,28 @@ struct BIG_INT {
 };
 
 namespace MATH {
-  constexpr inline u32 abs(i32 i) {
+  constexpr u32 abs(i32 i) {
     i32 mask = i >> 31;
     i ^= mask;
     return (i - mask);
   }
 
-  constexpr inline u32 abs(u32 u) { return u; }
+  constexpr u32 abs(u32 u) { return u; }
   f32 abs(f32);
 
-  constexpr inline f32 maximum(f32 a, f32 b) {
+  constexpr f32 maximum(f32 a, f32 b) {
     return a > b ? a : b;
   }
 
-  constexpr inline f32 maximum(f32 a, f32 b, f32 c) {
+  constexpr f32 maximum(f32 a, f32 b, f32 c) {
     return maximum(maximum(a, b), c);
   }
 
-  constexpr inline f32 minimum(f32 a, f32 b) {
+  constexpr f32 minimum(f32 a, f32 b) {
     return a < b ? a : b;
   }
 
-  constexpr inline f32 minimum(f32 a, f32 b, f32 c) {
+  constexpr f32 minimum(f32 a, f32 b, f32 c) {
     return minimum(minimum(a, b), c);
   }
 
